@@ -31,11 +31,15 @@ void ASnackBodyBase::InsideNext()
 	}
 }
 
-void ASnackBodyBase::SetHeadNode()
+void ASnackBodyBase::SetHeadNode(ASnackBodyBase* SnackBodyBase)
 {
-	if (SnackBase)
+	if (SnackBodyBase)
 	{
-		TransformNode = SnackBase->FirstTransformNode;
+		TransformNode = SnackBodyBase->TransformNode;
+	}
+	else
+	{
+		TransformNode = SnackBase->CurrentTransformNode;
 	}
 }
 

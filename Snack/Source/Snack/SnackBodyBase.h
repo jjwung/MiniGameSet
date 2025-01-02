@@ -36,7 +36,7 @@ public:
 	void InsideNext();
 
 	UFUNCTION(BlueprintCallable)
-	void SetHeadNode();
+	void SetHeadNode(ASnackBodyBase* SnackBodyBase);
 
 	UFUNCTION(BlueprintCallable)
 	FTransform GetNodeTransform();
