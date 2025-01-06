@@ -5,6 +5,8 @@
 #include "CoreMinimal.h"
 #include "SnackBase.generated.h"
 
+class ContainerType;
+
 UCLASS(Blueprintable)
 class SNACK_API ASnackBase : public APawn
 {
@@ -37,14 +39,20 @@ public:
 	float Speed = 1.f;
 	
 public:
+	TLinkedList<FTransform>* NextNode(TLinkedList<FTransform>* Node);
+	
 	UFUNCTION(BlueprintCallable)
-	FTransform NextNode();
+	FTransform NextNodeTransform();
 
+	/** 第几个节点 */
+	UFUNCTION(BlueprintCallable)
+	FTransform CallNextNodeMutiSt(int Times, bool& Success);
+	
 	UFUNCTION(BlueprintCallable)
 	void AddNode(FTransform Transform);
 
 	UFUNCTION(BlueprintCallable, BlueprintPure)
-	FTransform FindBodyTransform(ASnackBodyBase* SnackBodyBase);
+	FTransform FindBodyTransform(ASnackBodyBase* SnackBodyBase, bool& Success);
 	
 	UFUNCTION(BlueprintCallable)
 	void InitTransformNode();

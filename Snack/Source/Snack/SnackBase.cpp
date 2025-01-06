@@ -31,11 +31,50 @@ void ASnackBase::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 }
 
-FTransform ASnackBase::NextNode()
+TLinkedList<FTransform>* ASnackBase::NextNode(TLinkedList<FTransform>* Node)
 {
-	if (CurrentTransformNode && CurrentTransformNode->GetNextLink())
-		return CurrentTransformNode->GetNextLink()->operator*();
+	if (Node && Node->GetNextLink())
+	{
+		return Node->GetNextLink();
+	}
+	return nullptr;
+}
+
+FTransform ASnackBase::NextNodeTransform()
+{
+	TLinkedList<FTransform>* NextNodePtr = NextNode(FirstTransformNode);
+	if (NextNodePtr)
+		return NextNodePtr->operator*();
 	return FTransform();
+}
+
+FTransform ASnackBase::CallNextNodeMutiSt(int Times, bool& Success)
+{
+	TLinkedList<FTransform>* NextNodePtr = NextNode(FirstTransformNode);
+	if (NextNodePtr)
+	{
+		for (int i = 0; i < Times - 1; i++)
+		{
+			NextNodePtr = this->NextNode(NextNodePtr);
+			if (!NextNodePtr)
+			{
+				Success = false;
+				return FTransform();
+			}
+		}
+	}
+	else
+	{
+		Success = false;
+		return FTransform();
+	}
+	if (!NextNodePtr)
+	{
+		Success = false;
+		return FTransform();
+	}
+	Success = true;
+	return NextNodePtr->operator*();
 }
 
 void ASnackBase::AddNode(FTransform Transform)
@@ -51,14 +90,16 @@ void ASnackBase::AddNode(FTransform Transform)
 	}
 }
 
-FTransform ASnackBase::FindBodyTransform(ASnackBodyBase* SnackBodyBase)
+FTransform ASnackBase::FindBodyTransform(ASnackBodyBase* SnackBodyBase, bool& Success)
 {
 	FTransform CurrentBodyTransform;
 	TLinkedList<FTransform>* _List = SnackBodyBase->TransformNode;
 	if (_List)
 	{
 		CurrentBodyTransform = _List->operator*();
+		Success = true;
 	}
+	Success = false;
 	return CurrentBodyTransform;
 }
 
