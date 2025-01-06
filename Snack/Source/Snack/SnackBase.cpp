@@ -33,18 +33,9 @@ void ASnackBase::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent
 
 FTransform ASnackBase::NextNode()
 {
-	// return CurrentTransformNode->GetNextLink()->operator*();
-	return FirstTransformNode->GetNextLink()->operator*();
-}
-
-FTransform ASnackBase::NextNode2()
-{
-	return FirstTransformNode->GetNextLink()->GetNextLink()->operator*();
-}
-
-FTransform ASnackBase::NextNode3()
-{
-	return FirstTransformNode->GetNextLink()->GetNextLink()->GetNextLink()->operator*();
+	if (CurrentTransformNode && CurrentTransformNode->GetNextLink())
+		return CurrentTransformNode->GetNextLink()->operator*();
+	return FTransform();
 }
 
 void ASnackBase::AddNode(FTransform Transform)

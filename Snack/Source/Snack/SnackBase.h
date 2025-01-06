@@ -32,14 +32,13 @@ public:
 	TLinkedList<FTransform>* FirstTransformNode;
 	
 	TLinkedList<FTransform>* CurrentTransformNode;
+
+	UPROPERTY(EditAnywhere,BlueprintReadWrite)
+	float Speed = 1.f;
 	
 public:
 	UFUNCTION(BlueprintCallable)
 	FTransform NextNode();
-	UFUNCTION(BlueprintCallable)
-	FTransform NextNode2();
-	UFUNCTION(BlueprintCallable)
-	FTransform NextNode3();
 
 	UFUNCTION(BlueprintCallable)
 	void AddNode(FTransform Transform);
