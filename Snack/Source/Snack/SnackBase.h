@@ -5,8 +5,6 @@
 #include "CoreMinimal.h"
 #include "SnackBase.generated.h"
 
-class ContainerType;
-
 UCLASS(Blueprintable)
 class SNACK_API ASnackBase : public APawn
 {
@@ -20,7 +18,7 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
-public:	
+public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
@@ -28,38 +26,49 @@ public:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 public:
-	//UPROPERTY(BlueprintReadWrite)
-	TQueue<FTransform> SnackBodyTransform;
-
-	TLinkedList<FTransform>* FirstTransformNode;
+	TDoubleLinkedList<FTransform>* DoubleLinkedList = new TDoubleLinkedList<FTransform>();
 	
-	TLinkedList<FTransform>* CurrentTransformNode;
+	TDoubleLinkedList<FTransform>::TDoubleLinkedListNode* FirstTransformNode;
 
-	UPROPERTY(EditAnywhere,BlueprintReadWrite)
+	TDoubleLinkedList<FTransform>::TDoubleLinkedListNode* CurrentTransformNode;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float Speed = 1.f;
-	
-public:
-	TLinkedList<FTransform>* NextNode(TLinkedList<FTransform>* Node);
-	
-	UFUNCTION(BlueprintCallable)
-	FTransform NextNodeTransform();
 
-	/** 第几个节点 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	int NodeSize;
+
+public:
+	TDoubleLinkedList<FTransform>::TDoubleLinkedListNode* NextNode(TDoubleLinkedList<FTransform>::TDoubleLinkedListNode* Node);
+	TDoubleLinkedList<FTransform>::TDoubleLinkedListNode* PrevNode(TDoubleLinkedList<FTransform>::TDoubleLinkedListNode* Node);
+
 	UFUNCTION(BlueprintCallable)
-	FTransform CallNextNodeMutiSt(int Times, bool& Success);
-	
+	FTransform NextNodeTransform(bool& Success);
+
+	/** 获取从当前节点开始后的第N个节点的变换 */
+	UFUNCTION(BlueprintCallable)
+	FTransform SetNextTimesNode(int Times, ASnackBodyBase* SnackBodyBase, bool& Success);
+
+	/** 获取从当前节点开始前的第N个节点的变换 */
+	UFUNCTION(BlueprintCallable)
+	bool SetPrevTimesNode(int Times, ASnackBodyBase* SnackBody);
+
 	UFUNCTION(BlueprintCallable)
 	void AddNode(FTransform Transform);
 
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	FTransform FindBodyTransform(ASnackBodyBase* SnackBodyBase, bool& Success);
-	
+
 	UFUNCTION(BlueprintCallable)
 	void InitTransformNode();
 
 	UFUNCTION(BlueprintCallable)
 	FTransform GetFirstTransform();
-	
-	void RemoveLinkNode(ASnackBodyBase* SnackBodyBase);
-	
+
+	/**
+	 * 截断链表，删除指定节点及其后面的节点
+	 * @param Node 节点
+	 * @param next 是：下一个节点，否：上一个节点
+	 */
+	void TruncateLinkedNode(TDoubleLinkedList<FTransform>::TDoubleLinkedListNode* Node, bool next = true);
 };

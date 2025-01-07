@@ -26,14 +26,14 @@ public:
 	virtual void Tick(float DeltaTime) override;
 
 public:
-	TLinkedList<FTransform>* TransformNode;
+	TDoubleLinkedList<FTransform>::TDoubleLinkedListNode* TransformNode;
 
 	UPROPERTY(BlueprintReadWrite)
 	ASnackBase* SnackBase;
 	
 public:
 	UFUNCTION(BlueprintCallable)
-	void InsideNext();
+	void InsideNext(bool& bSuccess);
 
 	UFUNCTION(BlueprintCallable)
 	void SetHeadNode(ASnackBodyBase* SnackBodyBase);

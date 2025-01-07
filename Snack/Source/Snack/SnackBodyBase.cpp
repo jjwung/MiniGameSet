@@ -21,14 +21,28 @@ void ASnackBodyBase::BeginPlay()
 void ASnackBodyBase::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+
+	GEngine->AddOnScreenDebugMessage(-1, 0.f,FColor::Orange,
+				FString::Printf(TEXT("CurrentTransformNode is: %p"), TransformNode));
 }
 
-void ASnackBodyBase::InsideNext()
+void ASnackBodyBase::InsideNext(bool& bSuccess)
 {
 	if (TransformNode)
 	{
-		TransformNode = TransformNode->Next();
+		TDoubleLinkedList<FTransform>::TDoubleLinkedListNode* TransformNodeNext = TransformNode->GetNextNode();
+		if (TransformNodeNext)
+		{
+			TransformNode = TransformNodeNext;
+			bSuccess = true;
+			TDoubleLinkedList<FTransform>::TDoubleLinkedListNode* TransformNodePrev = TransformNodeNext->GetPrevNode();
+			//SnackBase->DoubleLinkedList->RemoveNode(TransformNodePrev);
+			// 截断链表
+			// TruncateLinkedNode();
+			return;
+		}
 	}
+	bSuccess = false;
 }
 
 void ASnackBodyBase::SetHeadNode(ASnackBodyBase* SnackBodyBase)
@@ -46,6 +60,6 @@ void ASnackBodyBase::SetHeadNode(ASnackBodyBase* SnackBodyBase)
 FTransform ASnackBodyBase::GetNodeTransform()
 {
 	if (TransformNode)
-	return TransformNode->operator*();
+	return TransformNode->GetValue();
 	return FTransform();
 }

@@ -23,6 +23,11 @@ void ASnackBase::BeginPlay()
 void ASnackBase::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+
+	GEngine->AddOnScreenDebugMessage(-1, 0.f, FColor::Orange,
+									 FString::Printf(TEXT("Node Size is: %d"), DoubleLinkedList->Num()));
+	GEngine->AddOnScreenDebugMessage(-1, 0.f, FColor::Orange,
+	                                 FString::Printf(TEXT("CurrentTransformNode is: %p"), CurrentTransformNode));
 }
 
 // Called to bind functionality to input
@@ -31,26 +36,41 @@ void ASnackBase::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 }
 
-TLinkedList<FTransform>* ASnackBase::NextNode(TLinkedList<FTransform>* Node)
+TDoubleLinkedList<FTransform>::TDoubleLinkedListNode* ASnackBase::NextNode(
+	TDoubleLinkedList<FTransform>::TDoubleLinkedListNode* Node)
 {
-	if (Node && Node->GetNextLink())
+	if (Node && Node->GetNextNode())
 	{
-		return Node->GetNextLink();
+		return Node->GetNextNode();
 	}
 	return nullptr;
 }
 
-FTransform ASnackBase::NextNodeTransform()
+TDoubleLinkedList<FTransform>::TDoubleLinkedListNode* ASnackBase::PrevNode(
+	TDoubleLinkedList<FTransform>::TDoubleLinkedListNode* Node)
 {
-	TLinkedList<FTransform>* NextNodePtr = NextNode(FirstTransformNode);
+	if (Node && Node->GetPrevNode())
+	{
+		return  Node->GetPrevNode();
+	}
+	return nullptr;
+}
+
+FTransform ASnackBase::NextNodeTransform(bool& Success)
+{
+	TDoubleLinkedList<FTransform>::TDoubleLinkedListNode* NextNodePtr = NextNode(FirstTransformNode);
 	if (NextNodePtr)
-		return NextNodePtr->operator*();
+	{
+		Success = true;	
+		return NextNodePtr->GetValue();
+	}
+	Success = false;
 	return FTransform();
 }
 
-FTransform ASnackBase::CallNextNodeMutiSt(int Times, bool& Success)
+FTransform ASnackBase::SetNextTimesNode(int Times, ASnackBodyBase* SnackBody, bool& Success)
 {
-	TLinkedList<FTransform>* NextNodePtr = NextNode(FirstTransformNode);
+	TDoubleLinkedList<FTransform>::TDoubleLinkedListNode* NextNodePtr = NextNode(SnackBody->TransformNode);
 	if (NextNodePtr)
 	{
 		for (int i = 0; i < Times - 1; i++)
@@ -74,18 +94,46 @@ FTransform ASnackBase::CallNextNodeMutiSt(int Times, bool& Success)
 		return FTransform();
 	}
 	Success = true;
-	return NextNodePtr->operator*();
+	SnackBody->TransformNode = NextNodePtr;
+	return NextNodePtr->GetValue();
+}
+
+bool ASnackBase::SetPrevTimesNode(int Times, ASnackBodyBase* SnackBody)
+{
+	TDoubleLinkedList<FTransform>::TDoubleLinkedListNode* PrevNodePtr = PrevNode(SnackBody->TransformNode);
+	if (PrevNodePtr)
+	{
+		for (int i = 0; i < Times - 1; i++)
+		{
+			PrevNodePtr = this->PrevNode(PrevNodePtr);
+			if (!PrevNodePtr)
+			{
+				return false;
+			}
+		}
+	}
+	else
+	{
+		return false;
+	}
+	if (!PrevNodePtr)
+	{
+		return false;
+	}
+	SnackBody->TransformNode = PrevNodePtr;
+	return true;
 }
 
 void ASnackBase::AddNode(FTransform Transform)
 {
-	if (CurrentTransformNode)
+	if (DoubleLinkedList)
 	{
-		TLinkedList<FTransform>* NextTransformNode = new TLinkedList(Transform);
+		TDoubleLinkedList<FTransform>::TDoubleLinkedListNode* NextTransformNode = new TDoubleLinkedList<FTransform>::TDoubleLinkedListNode(Transform);
 		if (CurrentTransformNode && NextTransformNode)
 		{
-			CurrentTransformNode->LinkBefore(NextTransformNode);
+			DoubleLinkedList->AddTail(NextTransformNode);
 			CurrentTransformNode = NextTransformNode;
+			NodeSize++;
 		}
 	}
 }
@@ -93,11 +141,12 @@ void ASnackBase::AddNode(FTransform Transform)
 FTransform ASnackBase::FindBodyTransform(ASnackBodyBase* SnackBodyBase, bool& Success)
 {
 	FTransform CurrentBodyTransform;
-	TLinkedList<FTransform>* _List = SnackBodyBase->TransformNode;
+	TDoubleLinkedList<FTransform>::TDoubleLinkedListNode* _List = SnackBodyBase->TransformNode;
 	if (_List)
 	{
-		CurrentBodyTransform = _List->operator*();
+		CurrentBodyTransform = _List->GetValue();
 		Success = true;
+		return CurrentBodyTransform;
 	}
 	Success = false;
 	return CurrentBodyTransform;
@@ -105,20 +154,22 @@ FTransform ASnackBase::FindBodyTransform(ASnackBodyBase* SnackBodyBase, bool& Su
 
 void ASnackBase::InitTransformNode()
 {
-	FirstTransformNode = new TLinkedList(GetActorTransform());
+	FirstTransformNode = new TDoubleLinkedList<FTransform>::TDoubleLinkedListNode(GetActorTransform());
 	CurrentTransformNode = FirstTransformNode;
 }
 
 FTransform ASnackBase::GetFirstTransform()
 {
-	return FirstTransformNode->operator*();
+	return FirstTransformNode->GetValue();
 }
 
-void ASnackBase::RemoveLinkNode(ASnackBodyBase* SnackBodyBase)
+void ASnackBase::TruncateLinkedNode(TDoubleLinkedList<FTransform>::TDoubleLinkedListNode* Node, bool next)
 {
-	TLinkedList<FTransform>* _TransformNode = SnackBodyBase->TransformNode;
-	if (_TransformNode)
+	
+	if (Node)
 	{
-		_TransformNode->Unlink();
+		PrevNode(Node);
+		// _TransformNode->Unlink();
+		// 截断链表逻辑
 	}
 }
