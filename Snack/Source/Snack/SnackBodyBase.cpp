@@ -21,9 +21,6 @@ void ASnackBodyBase::BeginPlay()
 void ASnackBodyBase::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
-	GEngine->AddOnScreenDebugMessage(-1, 0.f,FColor::Orange,
-				FString::Printf(TEXT("CurrentTransformNode is: %p"), TransformNode));
 }
 
 void ASnackBodyBase::InsideNext(bool& bSuccess)
@@ -36,9 +33,6 @@ void ASnackBodyBase::InsideNext(bool& bSuccess)
 			TransformNode = TransformNodeNext;
 			bSuccess = true;
 			TDoubleLinkedList<FTransform>::TDoubleLinkedListNode* TransformNodePrev = TransformNodeNext->GetPrevNode();
-			//SnackBase->DoubleLinkedList->RemoveNode(TransformNodePrev);
-			// 截断链表
-			// TruncateLinkedNode();
 			return;
 		}
 	}

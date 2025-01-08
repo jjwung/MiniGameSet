@@ -25,9 +25,8 @@ void ASnackBase::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 
 	GEngine->AddOnScreenDebugMessage(-1, 0.f, FColor::Orange,
-									 FString::Printf(TEXT("Node Size is: %d"), DoubleLinkedList->Num()));
-	GEngine->AddOnScreenDebugMessage(-1, 0.f, FColor::Orange,
-	                                 FString::Printf(TEXT("CurrentTransformNode is: %p"), CurrentTransformNode));
+	                                 FString::Printf(TEXT("Transform Nodes Size is: %d"), DoubleLinkedList->Num()));
+	
 }
 
 // Called to bind functionality to input
@@ -36,7 +35,7 @@ void ASnackBase::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 }
 
-TDoubleLinkedList<FTransform>::TDoubleLinkedListNode* ASnackBase::NextNode(
+TDoubleLinkedList<FTransform>::TDoubleLinkedListNode* ASnackBase::GetNextNode(
 	TDoubleLinkedList<FTransform>::TDoubleLinkedListNode* Node)
 {
 	if (Node && Node->GetNextNode())
@@ -46,22 +45,22 @@ TDoubleLinkedList<FTransform>::TDoubleLinkedListNode* ASnackBase::NextNode(
 	return nullptr;
 }
 
-TDoubleLinkedList<FTransform>::TDoubleLinkedListNode* ASnackBase::PrevNode(
+TDoubleLinkedList<FTransform>::TDoubleLinkedListNode* ASnackBase::GetPrevNode(
 	TDoubleLinkedList<FTransform>::TDoubleLinkedListNode* Node)
 {
 	if (Node && Node->GetPrevNode())
 	{
-		return  Node->GetPrevNode();
+		return Node->GetPrevNode();
 	}
 	return nullptr;
 }
 
 FTransform ASnackBase::NextNodeTransform(bool& Success)
 {
-	TDoubleLinkedList<FTransform>::TDoubleLinkedListNode* NextNodePtr = NextNode(FirstTransformNode);
+	TDoubleLinkedList<FTransform>::TDoubleLinkedListNode* NextNodePtr = GetNextNode(FirstTransformNode);
 	if (NextNodePtr)
 	{
-		Success = true;	
+		Success = true;
 		return NextNodePtr->GetValue();
 	}
 	Success = false;
@@ -70,12 +69,12 @@ FTransform ASnackBase::NextNodeTransform(bool& Success)
 
 FTransform ASnackBase::SetNextTimesNode(int Times, ASnackBodyBase* SnackBody, bool& Success)
 {
-	TDoubleLinkedList<FTransform>::TDoubleLinkedListNode* NextNodePtr = NextNode(SnackBody->TransformNode);
+	TDoubleLinkedList<FTransform>::TDoubleLinkedListNode* NextNodePtr = GetNextNode(SnackBody->TransformNode);
 	if (NextNodePtr)
 	{
 		for (int i = 0; i < Times - 1; i++)
 		{
-			NextNodePtr = this->NextNode(NextNodePtr);
+			NextNodePtr = this->GetNextNode(NextNodePtr);
 			if (!NextNodePtr)
 			{
 				Success = false;
@@ -100,12 +99,12 @@ FTransform ASnackBase::SetNextTimesNode(int Times, ASnackBodyBase* SnackBody, bo
 
 bool ASnackBase::SetPrevTimesNode(int Times, ASnackBodyBase* SnackBody)
 {
-	TDoubleLinkedList<FTransform>::TDoubleLinkedListNode* PrevNodePtr = PrevNode(SnackBody->TransformNode);
+	TDoubleLinkedList<FTransform>::TDoubleLinkedListNode* PrevNodePtr = GetPrevNode(SnackBody->TransformNode);
 	if (PrevNodePtr)
 	{
 		for (int i = 0; i < Times - 1; i++)
 		{
-			PrevNodePtr = this->PrevNode(PrevNodePtr);
+			PrevNodePtr = this->GetPrevNode(PrevNodePtr);
 			if (!PrevNodePtr)
 			{
 				return false;
@@ -128,7 +127,8 @@ void ASnackBase::AddNode(FTransform Transform)
 {
 	if (DoubleLinkedList)
 	{
-		TDoubleLinkedList<FTransform>::TDoubleLinkedListNode* NextTransformNode = new TDoubleLinkedList<FTransform>::TDoubleLinkedListNode(Transform);
+		TDoubleLinkedList<FTransform>::TDoubleLinkedListNode* NextTransformNode = new TDoubleLinkedList<
+			FTransform>::TDoubleLinkedListNode(Transform);
 		if (CurrentTransformNode && NextTransformNode)
 		{
 			DoubleLinkedList->AddTail(NextTransformNode);
@@ -163,13 +163,60 @@ FTransform ASnackBase::GetFirstTransform()
 	return FirstTransformNode->GetValue();
 }
 
-void ASnackBase::TruncateLinkedNode(TDoubleLinkedList<FTransform>::TDoubleLinkedListNode* Node, bool next)
+void ASnackBase::TruncateLinkedNode(TDoubleLinkedList<FTransform>::TDoubleLinkedListNode* TruncateNode, int Times)
 {
-	
-	if (Node)
+	if (TruncateNode)
 	{
-		PrevNode(Node);
+		TDoubleLinkedList<FTransform>::TDoubleLinkedListNode* PrevNode = GetPrevNode(TruncateNode);
 		// _TransformNode->Unlink();
+		bool bIsTruncated = true; // 是否要截断链表
 		// 截断链表逻辑
+		for (int i = 0; i < Times; i++)
+		{
+			if (PrevNode)
+			{
+				PrevNode = PrevNode->GetPrevNode();
+			}
+			else
+			{
+				bIsTruncated = false;
+				break;
+			}
+		}
+		if (PrevNode && bIsTruncated)
+		{
+			TDoubleLinkedList<FTransform>::TDoubleLinkedListNode* HeadNode = DoubleLinkedList->GetHead();
+			int RemoveCount = 0;
+			while (true)
+			{
+				HeadNode = DoubleLinkedList->GetHead();
+				if (HeadNode)
+				{
+					if (HeadNode == PrevNode)
+					{
+						break;
+					}
+					DoubleLinkedList->RemoveNode(HeadNode);
+					RemoveCount++;
+				}
+			}
+			GEngine->AddOnScreenDebugMessage(-1, 3.f, FColor::Blue,
+			                                 FString::Printf(TEXT("Remove Node Count = %d "), RemoveCount));
+		}
 	}
+}
+
+void ASnackBase::TruncateLinkedNode(int Times, bool& Success)
+{
+	if (SnackBodies.Num() > 0)
+	{
+		ASnackBodyBase* SnackBodyBase = SnackBodies[SnackBodies.Num() - 1];
+		if (SnackBodyBase)
+		{
+			TruncateLinkedNode(SnackBodyBase->TransformNode, Times);
+			Success = true;
+			return;
+		}
+	}
+	Success = false;
 }

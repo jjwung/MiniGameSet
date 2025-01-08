@@ -5,6 +5,8 @@
 #include "CoreMinimal.h"
 #include "SnackBase.generated.h"
 
+class ASnackBodyBase;
+
 UCLASS(Blueprintable)
 class SNACK_API ASnackBase : public APawn
 {
@@ -26,6 +28,9 @@ public:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 public:
+	UPROPERTY(EditAnywhere,BlueprintReadWrite)
+	TArray<ASnackBodyBase*> SnackBodies;
+	
 	TDoubleLinkedList<FTransform>* DoubleLinkedList = new TDoubleLinkedList<FTransform>();
 	
 	TDoubleLinkedList<FTransform>::TDoubleLinkedListNode* FirstTransformNode;
@@ -38,9 +43,19 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	int NodeSize;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	int NodeDistance = 20;
+
+	/**
+	 * 当蛇尾最后经过的路径超过该值时，回收这些记录的路径
+	 * 推荐值：1000，越大则越安全但会占用更多内存，越小则可能存在吞噬过快时会存在找不到路径的情况
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	int DestroyPosition = 1000;
+
 public:
-	TDoubleLinkedList<FTransform>::TDoubleLinkedListNode* NextNode(TDoubleLinkedList<FTransform>::TDoubleLinkedListNode* Node);
-	TDoubleLinkedList<FTransform>::TDoubleLinkedListNode* PrevNode(TDoubleLinkedList<FTransform>::TDoubleLinkedListNode* Node);
+	TDoubleLinkedList<FTransform>::TDoubleLinkedListNode* GetNextNode(TDoubleLinkedList<FTransform>::TDoubleLinkedListNode* Node);
+	TDoubleLinkedList<FTransform>::TDoubleLinkedListNode* GetPrevNode(TDoubleLinkedList<FTransform>::TDoubleLinkedListNode* Node);
 
 	UFUNCTION(BlueprintCallable)
 	FTransform NextNodeTransform(bool& Success);
@@ -68,7 +83,9 @@ public:
 	/**
 	 * 截断链表，删除指定节点及其后面的节点
 	 * @param Node 节点
-	 * @param next 是：下一个节点，否：上一个节点
 	 */
-	void TruncateLinkedNode(TDoubleLinkedList<FTransform>::TDoubleLinkedListNode* Node, bool next = true);
+	void TruncateLinkedNode(TDoubleLinkedList<FTransform>::TDoubleLinkedListNode* Node, int Times);
+
+	UFUNCTION(BlueprintCallable)
+	void TruncateLinkedNode(int Times, bool& Success);
 };
