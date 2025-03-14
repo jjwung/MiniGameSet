@@ -37,6 +37,7 @@ public:
 	 */
 	UFUNCTION(BlueprintCallable)
 	void ClearRegisterEnemyPawn();
+	
 };
 
 
